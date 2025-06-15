@@ -1,11 +1,12 @@
-import type { Request, Response } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { respondWithJSON, respondWithError } from "./json.js";
+import { BadRequestError } from "./ApiError.js";
 
 interface ChirpRequest {
     body: string;
 }
 
-export function handlerChirpValidation(req: Request, res: Response): void {
+export function handlerChirpValidation(req: Request, res: Response, next: NextFunction): void {
     // let body = "";
 
     // req.on("data", (chunk) => {
@@ -62,8 +63,9 @@ export function handlerChirpValidation(req: Request, res: Response): void {
         
         const maxChirpLength = 140;
         if (data.body.length > maxChirpLength) {
-            respondWithError(res, 400, "Chirp is too long");
-            return;
+            // respondWithError(res, 400, "Chirp is too long");
+            // return;
+           throw new BadRequestError(`Chirp is too long. Max length is ${maxChirpLength}`);
         }
 
         const cleanedBody = cleanChirp(data.body);
@@ -72,8 +74,9 @@ export function handlerChirpValidation(req: Request, res: Response): void {
             cleanedBody: cleanedBody,
         });
     } catch (error) {
-        console.error("Error validating chirp:", error);
-        respondWithError(res, 500, "Something went wrong");
+        // console.error("Error validating chirp:", error);
+        // respondWithError(res, 500, "Something went wrong");
+        next(error);
     }  
 
 
