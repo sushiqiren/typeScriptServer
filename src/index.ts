@@ -1,5 +1,10 @@
 import express from "express";
+import postgres from "postgres";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
+import { drizzle } from "drizzle-orm/postgres-js";
 
+
+import { config } from "./config.js";
 import { handlerReadiness } from "./api/readiness.js";
 import { handlerMetrics } from "./api/metrics.js";
 import { handlerReset } from "./api/reset.js";
@@ -11,29 +16,50 @@ import {
 import { handlerChirpValidation } from "./api/chripValidation.js";
 import { NotFoundError } from "./api/ApiError.js";
 
+const migrationClient = postgres(config.db.url, {max: 1});
 
-const app = express();
-const PORT = 8080;
+(async () => {
+  try {
+    console.log("Running database migrations...");
+    await migrate(drizzle(migrationClient), config.db.migrationConfig);
+    console.log("Migrations completed successfully");
+    
+    // Start the server after migrations are complete
+    startServer();
+  } catch (error) {
+    console.error("Failed to run migrations:", error);
+    process.exit(1);
+  } finally {
+    // Close the migration client
+    await migrationClient.end();
+  }
+})();
 
-app.use(middlewareLogResponse);
-app.use("/app", middlewareMetricsInc, express.static("./src/app"));
-app.use(express.json());
+function startServer() {
+  const app = express();
+  const PORT = 8080;
 
-app.get("/api/healthz", handlerReadiness);
-app.get("/admin/metrics", handlerMetrics);
-app.post("/admin/reset", handlerReset);
-app.post("/api/validate_chirp", (req, res, next) => {
-  Promise.resolve(handlerChirpValidation(req, res, next)).catch(next);
-});
+  app.use(middlewareLogResponse);
+  app.use("/app", middlewareMetricsInc, express.static("./src/app"));
+  app.use(express.json());
 
-// 404 handler for undefined routes
-app.use((req, res, next) => {
-  next(new NotFoundError(`Route ${req.method} ${req.path} not found`));
-});
+  app.get("/api/healthz", handlerReadiness);
+  app.get("/admin/metrics", handlerMetrics);
+  app.post("/admin/reset", handlerReset);
+  app.post("/api/validate_chirp", (req, res, next) => {
+    Promise.resolve(handlerChirpValidation(req, res, next)).catch(next);
+  });
 
-// Error handling middleware
-app.use(errorHandlerMiddleware);
+  // 404 handler for undefined routes
+  app.use((req, res, next) => {
+    next(new NotFoundError(`Route ${req.method} ${req.path} not found`));
+  });
 
-app.listen(PORT, () => {
-  console.log(`Server is running at http://localhost:${PORT}`);
-});
+  // Error handling middleware
+  app.use(errorHandlerMiddleware);
+
+  app.listen(PORT, () => {
+    console.log(`Server is running at http://localhost:${PORT}`);
+  });
+}
+
