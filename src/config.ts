@@ -18,6 +18,7 @@ type DBConfig = {
 type APIConfig = {
     fileserverHits: number;
     db: DBConfig;
+    platform: string;
 }
 
 // create a config object that will hold the stateful data and this object can be imported in other files
@@ -30,6 +31,7 @@ const config: APIConfig = {
       migrationsFolder: "./src/db/migrations",
     },
   },
+  platform: process.env.PLATFORM || "production",
 };
 
 export { config };
