@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { config } from "../config.js";
 import { deleteAllUsers } from "../db/queries/users.js";
+import { deleteAllChirps } from "../db/queries/chirps.js";
 import { ForbiddenError } from "./ApiError.js";
 
 export async function handlerReset(_: Request, res: Response, next: NextFunction): Promise<void> {
@@ -18,10 +19,11 @@ export async function handlerReset(_: Request, res: Response, next: NextFunction
     
     // Delete all users
     await deleteAllUsers();
+    await deleteAllChirps();
     
     // Send success response
     res.setHeader("Content-Type", "text/plain");
-    res.status(200).send("Hits reset to 0 and all users deleted");
+    res.status(200).send("Hits reset to 0 and all data deleted");
   } catch (error) {
     next(error);
   }
