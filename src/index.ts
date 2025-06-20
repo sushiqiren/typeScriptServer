@@ -16,6 +16,7 @@ import {
 // import { handlerChirpValidation } from "./api/chripValidation.js";
 import { handlerCreateUser } from "./api/createUser.js";
 import { handlerCreateChirp } from "./api/createChirp.js";
+import { handlerGetChirps } from "./api/getAllChirps.js";
 import { NotFoundError } from "./api/ApiError.js";
 
 const migrationClient = postgres(config.db.url, {max: 1});
@@ -55,6 +56,10 @@ function startServer() {
   // Add the new chirps endpoint
   app.post("/api/chirps", (req, res, next) => {
     Promise.resolve(handlerCreateChirp(req, res, next)).catch(next);
+  });
+
+  app.get("/api/chirps", (req, res, next) => {
+    Promise.resolve(handlerGetChirps(req, res, next)).catch(next);
   });
 
   app.post("/api/users", (req, res, next) => {
