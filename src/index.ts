@@ -17,6 +17,7 @@ import {
 import { handlerCreateUser } from "./api/createUser.js";
 import { handlerCreateChirp } from "./api/createChirp.js";
 import { handlerGetChirps } from "./api/getAllChirps.js";
+import { handlerGetChirpById } from "./api/getChirp.js";
 import { NotFoundError } from "./api/ApiError.js";
 
 const migrationClient = postgres(config.db.url, {max: 1});
@@ -64,6 +65,11 @@ function startServer() {
 
   app.post("/api/users", (req, res, next) => {
     Promise.resolve(handlerCreateUser(req, res, next)).catch(next);
+  });
+
+  // Add the new endpoint for getting a chirp by ID
+  app.get("/api/chirps/:chirpID", (req, res, next) => {
+    Promise.resolve(handlerGetChirpById(req, res, next)).catch(next);
   });
 
   // 404 handler for undefined routes
