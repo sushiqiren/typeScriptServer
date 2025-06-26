@@ -1,4 +1,5 @@
 import type { MigrationConfig } from "drizzle-orm/migrator";
+import { env } from "process";
 
 process.loadEnvFile();
 
@@ -15,10 +16,16 @@ type DBConfig = {
   migrationConfig: MigrationConfig;
 };
 
+// Add JWT config type
+type JWTConfig = {
+  secret: string;
+};
+
 type APIConfig = {
     fileserverHits: number;
     db: DBConfig;
     platform: string;
+    jwt: JWTConfig;
 }
 
 // create a config object that will hold the stateful data and this object can be imported in other files
@@ -32,6 +39,9 @@ const config: APIConfig = {
     },
   },
   platform: process.env.PLATFORM || "production",
+  jwt: {
+    secret: envOrThrow("SECRET"),
+  },
 };
 
 export { config };

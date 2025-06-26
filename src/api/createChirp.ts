@@ -1,17 +1,27 @@
 import type { Request, Response, NextFunction } from "express";
 import { createChirp } from "../db/queries/chirps.js";
-import { BadRequestError, NotFoundError } from "./ApiError.js";
+import { BadRequestError, NotFoundError, UnauthorizedError } from "./ApiError.js";
 import { db } from "../db/index.js";
 import { users } from "../db/schema.js";
 import { eq } from "drizzle-orm";
+import { getBearerToken, validateJWT } from "../utils/auth.js";
+import { config } from "../config.js";
 
 interface ChirpRequest {
   body: string;
-  userId: string;
 }
 
 export async function handlerCreateChirp(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
+    // Extract and validate JWT from the request
+    let userId: string;
+    try {
+      const token = getBearerToken(req);
+      userId = validateJWT(token, config.jwt.secret);
+    } catch (error) {
+      throw new UnauthorizedError("Authentication required to create chirps");
+    }
+    
     const data = req.body as ChirpRequest;
     
     // Validate chirp body
@@ -28,28 +38,23 @@ export async function handlerCreateChirp(req: Request, res: Response, next: Next
       throw new BadRequestError(`Chirp is too long. Max length is ${maxChirpLength}`);
     }
 
-    // Validate user ID
-    if (!data.userId || typeof data.userId !== "string") {
-      throw new BadRequestError("User ID is required and must be a string");
-    }
-
-    // Verify that the user exists
+    // Verify that the user exists (the token could reference a deleted user)
     const userExists = await db.select()
       .from(users)
-      .where(eq(users.id, data.userId))
+      .where(eq(users.id, userId))
       .limit(1);
       
     if (userExists.length === 0) {
-      throw new NotFoundError(`User with ID ${data.userId} does not exist`);
+      throw new NotFoundError(`User does not exist`);
     }
     
     // Clean the chirp text (removing banned words)
     const cleanedBody = cleanChirp(data.body);
     
-    // Create the chirp in the database
+    // Create the chirp in the database using the user ID from the token
     const newChirp = await createChirp({
       body: cleanedBody,
-      userId: data.userId,
+      userId: userId,
     });
     
     // Return the created chirp

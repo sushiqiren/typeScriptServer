@@ -1,5 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import type { Request } from 'express';
+import { UnauthorizedError } from '../api/ApiError.js';
 import { JwtPayload } from 'jsonwebtoken';
 
 export async function hashPassword(password: string): Promise<string> {
@@ -80,4 +82,35 @@ export function validateJWT(tokenString: string, secret: string): string {
     // Re-throw any other errors
     throw error;
   }
+}
+
+/**
+ * Extracts the bearer token from the Authorization header
+ * @param req Express request object
+ * @returns The extracted token string
+ * @throws UnauthorizedError if the Authorization header is missing or malformed
+ */
+export function getBearerToken(req: Request): string {
+  // Get the Authorization header
+  const authHeader = req.get('Authorization');
+  
+  // Check if header exists
+  if (!authHeader) {
+    throw new UnauthorizedError('Authorization header is missing');
+  }
+  
+  // Check if it's a Bearer token
+  if (!authHeader.startsWith('Bearer ')) {
+    throw new UnauthorizedError('Invalid authorization format. Expected "Bearer TOKEN"');
+  }
+  
+  // Extract the token (remove "Bearer " prefix and trim whitespace)
+  const token = authHeader.substring(7).trim();
+  
+  // Ensure token is not empty
+  if (!token) {
+    throw new UnauthorizedError('Token is missing from Authorization header');
+  }
+  
+  return token;
 }
