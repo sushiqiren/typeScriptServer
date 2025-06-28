@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { getUserByEmail } from "../db/queries/users.js";
-import { checkPasswordHash, makeJWT } from "../utils/auth.js";
+import { checkPasswordHash, makeJWT, makeRefreshToken } from "../utils/auth.js";
+import { createRefreshToken } from "../db/queries/refreshTokens.js";
 import { UnauthorizedError, BadRequestError } from "./ApiError.js";
 import { users } from "../db/schema.js";
 import { config } from "../config.js";
@@ -14,7 +15,6 @@ type UserResponse = Omit<User, 'hashedPassword'>;
 interface LoginRequest {
   email: string;
   password: string;
-  expiresInSeconds?: number;
 }
 
 export async function handlerLogin(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -26,13 +26,6 @@ export async function handlerLogin(req: Request, res: Response, next: NextFuncti
         typeof data.email !== 'string' || 
         typeof data.password !== 'string') {
       throw new UnauthorizedError("Incorrect email or password");
-    }
-
-    // Validate expiresInSeconds if provided
-    if (data.expiresInSeconds !== undefined) {
-      if (typeof data.expiresInSeconds !== 'number' || data.expiresInSeconds <= 0) {
-        throw new BadRequestError("expiresInSeconds must be a positive number");
-      }
     }
     
     // Look up the user by email
@@ -50,29 +43,36 @@ export async function handlerLogin(req: Request, res: Response, next: NextFuncti
       throw new UnauthorizedError("Incorrect email or password");
     }
 
-    // Determine token expiration time (in seconds)
-    const ONE_HOUR = 60 * 60;  // 3600 seconds
-    let expiresIn = ONE_HOUR;  // Default to 1 hour
+    // Set up token expiration times
+    const ONE_HOUR = 60 * 60;  // 3600 seconds for JWT
+    const SIXTY_DAYS_MS = 60 * 24 * 60 * 60 * 1000; // 60 days in milliseconds for refresh token
     
-    if (data.expiresInSeconds !== undefined) {
-      // Use client-provided value, but cap at 1 hour
-      expiresIn = Math.min(data.expiresInSeconds, ONE_HOUR);
-    }
-    
-    // Generate JWT
+    // Generate access token (JWT) with 1 hour expiration
     const token = makeJWT(
       user.id,
-      expiresIn,
+      ONE_HOUR,
       config.jwt.secret
     );
     
-    // Create a safe user object without the password
+    // Generate refresh token with 60 day expiration
+    const refreshToken = makeRefreshToken();
+    const refreshTokenExpiresAt = new Date(Date.now() + SIXTY_DAYS_MS);
+    
+    // Store refresh token in database
+    await createRefreshToken(
+      refreshToken, 
+      user.id, 
+      refreshTokenExpiresAt
+    );
+    
+    // Create response with user data and both tokens
     const response = {
       id: user.id,
       email: user.email,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
       token: token,
+      refreshToken: refreshToken
     };
     
     // Return successful login response

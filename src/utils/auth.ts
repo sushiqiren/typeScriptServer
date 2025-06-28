@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import type { Request } from 'express';
 import { UnauthorizedError } from '../api/ApiError.js';
 import { JwtPayload } from 'jsonwebtoken';
@@ -113,4 +114,16 @@ export function getBearerToken(req: Request): string {
   }
   
   return token;
+}
+
+/**
+ * Generates a cryptographically secure random refresh token
+ * @returns A 256-bit (32-byte) random string encoded as hex
+ */
+export function makeRefreshToken(): string {
+  // Generate 32 bytes (256 bits) of cryptographically strong pseudo-random data
+  const randomBytes = crypto.randomBytes(32);
+  
+  // Convert the random bytes to a hexadecimal string
+  return randomBytes.toString('hex');
 }
