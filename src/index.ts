@@ -15,6 +15,7 @@ import {
 } from "./api/middleware.js";
 // import { handlerChirpValidation } from "./api/chripValidation.js";
 import { handlerCreateUser } from "./api/createUser.js";
+import { handlerUpdateUser } from "./api/updateUser.js";
 import { handlerCreateChirp } from "./api/createChirp.js";
 import { handlerGetChirps } from "./api/getAllChirps.js";
 import { handlerGetChirpById } from "./api/getChirp.js";
@@ -86,7 +87,11 @@ function startServer() {
 
   app.post("/api/revoke", (req, res, next) => {
   Promise.resolve(handlerRevokeToken(req, res, next)).catch(next);
-});
+  });
+
+  app.put("/api/users", (req, res, next) => {
+    Promise.resolve(handlerUpdateUser(req, res, next)).catch(next);
+  });
 
   // 404 handler for undefined routes
   app.use((req, res, next) => {
