@@ -22,6 +22,7 @@ import { handlerGetChirpById } from "./api/getChirp.js";
 import { handlerLogin } from "./api/getUserByEmail.js";
 import { handlerRefreshToken } from "./api/refresh.js";
 import { handlerRevokeToken } from "./api/revokeToken.js";
+import { handlerDeleteChirp } from "./api/deleteChirp.js";
 import { NotFoundError } from "./api/ApiError.js";
 
 const migrationClient = postgres(config.db.url, {max: 1});
@@ -91,6 +92,10 @@ function startServer() {
 
   app.put("/api/users", (req, res, next) => {
     Promise.resolve(handlerUpdateUser(req, res, next)).catch(next);
+  });
+
+  app.delete("/api/chirps/:chirpID", (req, res, next) => {
+    Promise.resolve(handlerDeleteChirp(req, res, next)).catch(next);
   });
 
   // 404 handler for undefined routes
