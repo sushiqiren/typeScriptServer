@@ -63,3 +63,22 @@ export async function updateUser(userId: string, updates: { email?: string; hash
     
   return result;
 }
+
+/**
+ * Upgrades a user to Chirpy Red status
+ * @param userId ID of the user to upgrade
+ * @returns The updated user record or undefined if user not found
+ */
+export async function upgradeToChirpyRed(userId: string) {
+  const [result] = await db
+    .update(users)
+    .set({
+      isChirpyRed: true,
+      updatedAt: new Date() // Ensure updatedAt is refreshed
+    })
+    .where(eq(users.id, userId))
+    .returning();
+    
+  return result;
+}
+

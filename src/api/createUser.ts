@@ -58,7 +58,8 @@ export async function handlerCreateUser(req: Request, res: Response, next: NextF
       id: newUser.id,
       email: newUser.email,
       createdAt: newUser.createdAt,
-      updatedAt: newUser.updatedAt
+      updatedAt: newUser.updatedAt,
+      isChirpyRed: newUser.isChirpyRed
     };
     res.status(201).json(safeUserData);
   } catch (error) {

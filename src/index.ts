@@ -16,6 +16,7 @@ import {
 // import { handlerChirpValidation } from "./api/chripValidation.js";
 import { handlerCreateUser } from "./api/createUser.js";
 import { handlerUpdateUser } from "./api/updateUser.js";
+import { handlerPolkaWebhook } from "./api/polkaWebhook.js";
 import { handlerCreateChirp } from "./api/createChirp.js";
 import { handlerGetChirps } from "./api/getAllChirps.js";
 import { handlerGetChirpById } from "./api/getChirp.js";
@@ -92,6 +93,10 @@ function startServer() {
 
   app.put("/api/users", (req, res, next) => {
     Promise.resolve(handlerUpdateUser(req, res, next)).catch(next);
+  });
+
+  app.post("/api/polka/webhooks", (req, res, next) => {
+    Promise.resolve(handlerPolkaWebhook(req, res, next)).catch(next);
   });
 
   app.delete("/api/chirps/:chirpID", (req, res, next) => {

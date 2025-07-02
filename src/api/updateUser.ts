@@ -76,7 +76,8 @@ export async function handlerUpdateUser(req: Request, res: Response, next: NextF
       id: updatedUser.id,
       email: updatedUser.email,
       createdAt: updatedUser.createdAt,
-      updatedAt: updatedUser.updatedAt
+      updatedAt: updatedUser.updatedAt,
+      isChirpyRed: updatedUser.isChirpyRed
     };
     
     res.status(200).json(safeUserData);
