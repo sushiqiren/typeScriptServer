@@ -127,3 +127,34 @@ export function makeRefreshToken(): string {
   // Convert the random bytes to a hexadecimal string
   return randomBytes.toString('hex');
 }
+
+/**
+ * Extracts the API key from the Authorization header
+ * @param req Express request object
+ * @returns The extracted API key
+ * @throws UnauthorizedError if the Authorization header is missing or malformed
+ */
+export function getAPIKey(req: Request): string {
+  // Get the Authorization header
+  const authHeader = req.get('Authorization');
+  
+  // Check if header exists
+  if (!authHeader) {
+    throw new UnauthorizedError('Authorization header is missing');
+  }
+  
+  // Check if it's an ApiKey format
+  if (!authHeader.startsWith('ApiKey ')) {
+    throw new UnauthorizedError('Invalid authorization format. Expected "ApiKey THE_KEY_HERE"');
+  }
+  
+  // Extract the API key (remove "ApiKey " prefix and trim whitespace)
+  const apiKey = authHeader.substring(7).trim();
+  
+  // Ensure the API key is not empty
+  if (!apiKey) {
+    throw new UnauthorizedError('API key is missing from Authorization header');
+  }
+  
+  return apiKey;
+}

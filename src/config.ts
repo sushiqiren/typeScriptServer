@@ -21,11 +21,17 @@ type JWTConfig = {
   secret: string;
 };
 
+// Add Polka config type
+type PolkaConfig = {
+  key: string;
+};
+
 type APIConfig = {
     fileserverHits: number;
     db: DBConfig;
     platform: string;
     jwt: JWTConfig;
+    polka: PolkaConfig;
 }
 
 // create a config object that will hold the stateful data and this object can be imported in other files
@@ -41,6 +47,9 @@ const config: APIConfig = {
   platform: process.env.PLATFORM || "production",
   jwt: {
     secret: envOrThrow("SECRET"),
+  },
+  polka: {
+    key: envOrThrow("POLKA_KEY"),
   },
 };
 

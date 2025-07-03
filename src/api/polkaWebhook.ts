@@ -1,6 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
 import { upgradeToChirpyRed } from "../db/queries/users.js";
-import { NotFoundError } from "./ApiError.js";
+import { NotFoundError, UnauthorizedError } from "./ApiError.js";
+import { getAPIKey } from "../utils/auth.js";
+import { config } from "../config.js";
 
 interface WebhookEvent {
   event: string;
@@ -9,21 +11,37 @@ interface WebhookEvent {
   };
 }
 
-export async function handlerPolkaWebhook(req: Request, res: Response, next: NextFunction): Promise<void | Response> {
+export async function handlerPolkaWebhook(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
+    // Verify the API key before processing the webhook
+    try {
+      const apiKey = getAPIKey(req);
+      
+      // Check if the provided API key matches the one in config
+      if (apiKey !== config.polka.key) {
+        throw new UnauthorizedError("Invalid API key");
+      }
+    } catch (error) {
+      // Return 401 for any authentication error
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    
     const webhookData = req.body as WebhookEvent;
     
     // Only process user.upgraded events
     if (webhookData.event !== "user.upgraded") {
       // Ignore all other events with a 204 No Content response
-      return res.status(204).end();
+      res.status(204).end();
+      return;
     }
     
     // Extract the user ID from the webhook payload
     const { userId } = webhookData.data;
     
     if (!userId) {
-      return res.status(400).json({ error: "Missing userId in webhook data" });
+      res.status(400).json({ error: "Missing userId in webhook data" });
+      return;
     }
     
     // Upgrade the user to Chirpy Red
@@ -35,7 +53,7 @@ export async function handlerPolkaWebhook(req: Request, res: Response, next: Nex
     }
     
     // Return 204 No Content for successful upgrade
-    return res.status(204).end();
+    res.status(204).end();
     
   } catch (error) {
     next(error);
