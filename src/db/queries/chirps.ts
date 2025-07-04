@@ -1,6 +1,6 @@
 import { db } from "../index.js";
 import { NewChirp, chirps } from "../schema.js";
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, desc } from "drizzle-orm";
 
 // Define a specific type for the forbidden result
 interface ForbiddenResult {
@@ -15,12 +15,25 @@ export async function createChirp(chirp: NewChirp) {
   return result;
 }
 
-export async function getAllChirps() {
-  // Get all chirps ordered by createdAt in ascending order
-  return await db
-    .select()
-    .from(chirps)
-    .orderBy(asc(chirps.createdAt));
+export async function getAllChirps(authorId?: string) {
+  // Start with the select query
+  const selectQuery = db.select({
+    id: chirps.id,
+    body: chirps.body,
+    createdAt: chirps.createdAt,
+    updatedAt: chirps.updatedAt,
+    userId: chirps.userId,
+  }).from(chirps);
+    
+  // Apply filter based on authorId condition
+  if (authorId) {
+    return await selectQuery
+      .where(eq(chirps.userId, authorId))
+      .orderBy(desc(chirps.createdAt));
+  } else {
+    return await selectQuery
+      .orderBy(desc(chirps.createdAt));
+  }
 }
 
 // get a chirp by ID
