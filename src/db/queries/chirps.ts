@@ -15,7 +15,7 @@ export async function createChirp(chirp: NewChirp) {
   return result;
 }
 
-export async function getAllChirps(authorId?: string) {
+export async function getAllChirps(authorId?: string, sortOrder: 'asc' | 'desc' = 'asc') {
   // Start with the select query
   const selectQuery = db.select({
     id: chirps.id,
@@ -26,13 +26,15 @@ export async function getAllChirps(authorId?: string) {
   }).from(chirps);
     
   // Apply filter based on authorId condition
-  if (authorId) {
-    return await selectQuery
-      .where(eq(chirps.userId, authorId))
-      .orderBy(desc(chirps.createdAt));
+  const filteredQuery = authorId 
+    ? selectQuery.where(eq(chirps.userId, authorId))
+    : selectQuery;
+    
+  // Apply sort based on sortOrder parameter
+  if (sortOrder === 'asc') {
+    return await filteredQuery.orderBy(asc(chirps.createdAt));
   } else {
-    return await selectQuery
-      .orderBy(desc(chirps.createdAt));
+    return await filteredQuery.orderBy(desc(chirps.createdAt));
   }
 }
 
